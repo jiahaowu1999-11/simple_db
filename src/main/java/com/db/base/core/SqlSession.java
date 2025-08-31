@@ -6,6 +6,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +24,7 @@ public class SqlSession {
         this.metadataCache = new EntityMetadataCache();
     }
 
-    public <T> T selectBySql(Class<T> entityClass, String sql, Object... params) {
+    public <T> List<T> selectBySql(Class<T> entityClass, String sql, Object... params) {
         EntityMetadata metadata = metadataCache.getMetadata(entityClass);
         assert sql != null;
         try (Connection conn = dataSource.getConnection();
@@ -33,9 +34,10 @@ public class SqlSession {
                     ps.setObject(i + 1, params[i]);
                 }
             }
+
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                return resultSetToEntity(rs, entityClass, metadata);
+                return resultSetToEntityList(rs, entityClass, metadata);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -235,6 +237,35 @@ public class SqlSession {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private <T> List<T> resultSetToEntityList(ResultSet rs, Class<T> entityClass, EntityMetadata metadata) throws SQLException, InstantiationException, IllegalAccessException, NoSuchFieldException {
+        // 5. 获取结果集元数据（包含列信息）
+        ResultSetMetaData dbmetaData = rs.getMetaData();
+        int columnCount = dbmetaData.getColumnCount(); // 列数量
+        List<T> tList = new ArrayList<>();
+        // 6. 遍历结果集，转换为Map
+        while (rs.next()) {
+            T entity = entityClass.newInstance();
+            for (int i = 1; i <= columnCount; i++) {
+                String columnName = dbmetaData.getColumnName(i); // 获取列名
+                Object columnValue = rs.getObject(i); // 获取列值
+                String fieldName = metadata.getColumnToFieldMap().get(columnName);
+
+                if (fieldName != null) {
+                    Field field = entityClass.getDeclaredField(fieldName);
+                    field.setAccessible(true);
+
+                    if (columnValue != null) {
+                        field.set(entity, columnValue);
+                    }
+                }
+            }
+            tList.add(entity);
+        }
+
+        return tList;
+
     }
 
     /**
