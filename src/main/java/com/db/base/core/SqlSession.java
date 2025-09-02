@@ -24,9 +24,42 @@ public class SqlSession {
         this.metadataCache = new EntityMetadataCache();
     }
 
+    public void deleteBySql(String sql, Object... params){
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (params != null && params.length > 0) {
+                for (int i = 0; i < params.length; i++) {
+                    ps.setObject(i + 1, params[i]);
+                }
+            }
+
+           ps.execute();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateBySql(String sql, Object... params){
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            if (params != null && params.length > 0) {
+                for (int i = 0; i < params.length; i++) {
+                    ps.setObject(i + 1, params[i]);
+                }
+            }
+
+            ps.execute();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public <T> List<T> selectBySql(Class<T> entityClass, String sql, Object... params) {
         EntityMetadata metadata = metadataCache.getMetadata(entityClass);
         assert sql != null;
+        List<T> tList = new ArrayList<>();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             if (params != null && params.length > 0) {
@@ -38,11 +71,13 @@ public class SqlSession {
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
                 return resultSetToEntityList(rs, entityClass, metadata);
+            }else {
+                return tList;
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return null;
+        return tList;
     }
 
 
