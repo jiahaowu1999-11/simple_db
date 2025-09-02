@@ -7,7 +7,7 @@
     <!--    mvn clean install -->
     <groupId>com.base</groupId>
     <artifactId>db_base</artifactId>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
