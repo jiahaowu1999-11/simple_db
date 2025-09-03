@@ -24,7 +24,7 @@ public class SqlSession {
         this.metadataCache = new EntityMetadataCache();
     }
 
-    public void deleteBySql(String sql, Object... params){
+    public void deleteBySql(String sql, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             if (params != null && params.length > 0) {
@@ -33,14 +33,14 @@ public class SqlSession {
                 }
             }
 
-           ps.execute();
+            ps.execute();
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void updateBySql(String sql, Object... params){
+    public void updateBySql(String sql, Object... params) {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             if (params != null && params.length > 0) {
@@ -69,11 +69,7 @@ public class SqlSession {
             }
 
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return resultSetToEntityList(rs, entityClass, metadata);
-            }else {
-                return tList;
-            }
+            resultSetToEntityList(rs, entityClass, metadata, tList);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -274,11 +270,11 @@ public class SqlSession {
         }
     }
 
-    private <T> List<T> resultSetToEntityList(ResultSet rs, Class<T> entityClass, EntityMetadata metadata) throws SQLException, InstantiationException, IllegalAccessException, NoSuchFieldException {
+    private <T> List<T> resultSetToEntityList(ResultSet rs, Class<T> entityClass, EntityMetadata metadata,
+                                              List<T> tList) throws SQLException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         // 5. 获取结果集元数据（包含列信息）
         ResultSetMetaData dbmetaData = rs.getMetaData();
         int columnCount = dbmetaData.getColumnCount(); // 列数量
-        List<T> tList = new ArrayList<>();
         // 6. 遍历结果集，转换为Map
         while (rs.next()) {
             T entity = entityClass.newInstance();
